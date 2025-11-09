@@ -11,9 +11,6 @@ def profesores_get():
 def profesores_create():
     data = request.get_json()
 
-    print("=== DEBUG POST /profesores ===")
-    print(f"Data reçue: {data}")
-    print(f"Type: {type(data)}")
 
     id = data.get("id")
     nombres = data.get("nombres")

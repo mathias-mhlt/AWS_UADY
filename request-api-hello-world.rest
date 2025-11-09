@@ -1,0 +1,55 @@
+###
+GET http://ec2-98-86-226-154.compute-1.amazonaws.com/alumnos HTTP/1.1
+Content-Type: application/json
+
+###
+POST http://ec2-98-86-226-154.compute-1.amazonaws.com/alumnos HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "nombres": "Juan",
+  "apellidos": "Perez",
+  "matricula": "A123456",
+  "promedio": 85.5
+}
+
+###
+DELETE http://ec2-98-86-226-154.compute-1.amazonaws.com/alumnos/1 HTTP/1.1
+Content-Type: application/json
+
+###
+PUT http://ec2-98-86-226-154.compute-1.amazonaws.com/alumnos/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "promedio": 56.0
+}
+
+###
+GET http://ec2-98-86-226-154.compute-1.amazonaws.com/profesores HTTP/1.1
+Content-Type: application/json
+
+###
+POST http://ec2-98-86-226-154.compute-1.amazonaws.com/profesores HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "nombres": "Ana",
+  "apellidos": "Lopez",
+  "numeroEmpleado": "654321",
+  "horasClase": 20
+}
+
+###
+DELETE http://ec2-98-86-226-154.compute-1.amazonaws.com/profesores/1 HTTP/1.1
+Content-Type: application/json
+
+###
+PUT http://ec2-98-86-226-154.compute-1.amazonaws.com/profesores/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "horasClase": 25
+}

@@ -11,10 +11,6 @@ def alumnos_get():
 def alumnos_create():
     data = request.get_json()
 
-    print("=== DEBUG POST /alumnos ===")
-    print(f"Data reçue: {data}")
-    print(f"Type: {type(data)}")
-
     id = data.get("id")
     nombres = data.get("nombres")
     apellidos = data.get("apellidos")

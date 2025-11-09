@@ -6,6 +6,8 @@ app = Flask(__name__)
 #in-memory storage
 alumnos = []
 profesores = []
+labeles_alumnos = ["id", "nombres", "apellidos", "matricula", "promedio"]
+labeles_profesores = ["id", "nombres", "apellidos", "numeroEmpleado", "horasClase"]
 
 #VALIDACIONES
 def validar_id(id):
@@ -45,61 +47,73 @@ def validar_matricula(matricula):
     return None
 
 def validar_promedio(promedio):
-    try:
-        promedio = float(promedio)
-        if promedio < 0 or promedio > 100:
-            return None
-        return promedio
-    except ValueError:
+    if not isinstance(promedio, (int, float)):
         return None
-    
+    if promedio < 0 or promedio > 100:
+        return None
+    return promedio
+
+def validar_labels(payload, labeles):
+    for label in payload.keys():
+        if label not in labeles:
+            return False
+    return True
+
 def validar_alumno_payload(payload):
     errors = {}
 
+    if not validar_labels(payload, labeles_alumnos):
+        errors["labels"] = "Etiquetas invalidas en el payload."
+        return errors
+
     id = validar_id(payload.get("id"))
     if id is None: 
-        errors["id"] = "ID inválido."
+        errors["id"] = "ID invalido."
 
     nombres = validar_nombre(payload.get("nombres"))
     if nombres is None: 
-        errors["nombres"] = "Nombre inválido."
+        errors["nombres"] = "Nombre invalido."
 
     apellidos = validar_nombre(payload.get("apellidos"))
     if apellidos is None: 
-        errors["apellidos"] = "Apellido inválido."
+        errors["apellidos"] = "Apellido invalido."
 
     matricula = validar_matricula(payload.get("matricula"))
     if matricula is None:   
-        errors["matricula"] = "Matrícula inválida."
+        errors["matricula"] = "Matricula invalida."
     
     promedio = validar_promedio(payload.get("promedio"))
     if promedio is None:   
-        errors["promedio"] = "Promedio inválido."
+        errors["promedio"] = "Promedio invalido."
 
     return errors
 
 def validar_profesor_payload(payload):
     errors = {}
 
+    if not validar_labels(payload, labeles_profesores):
+        errors["labels"] = "Etiquetas invalidas en el payload."
+        return errors
+
     id = validar_id(payload.get("id"))
     if id is None: 
-        errors["id"] = "ID inválido."
+        errors["id"] = "ID invalido."
 
     numeroEmpleado = validar_id(payload.get("numeroEmpleado"))
     if numeroEmpleado is None: 
-        errors["numeroEmpleado"] = "Número de empleado inválido."
+        errors["numeroEmpleado"] = "Numero de empleado invalido."
 
     nombres = validar_nombre(payload.get("nombres"))
     if nombres is None: 
-        errors["nombres"] = "Nombre inválido."
+        errors["nombres"] = "Nombre invalido."
 
     apellidos = validar_nombre(payload.get("apellidos"))
     if apellidos is None: 
-        errors["apellidos"] = "Apellido inválido."
+        errors["apellidos"] = "Apellido invalido."
 
-    horasClase = validar_horas(payload.get("horas"))
+    horasClase = validar_horas(payload.get("horasClase"))
     if horasClase is None:   
-        errors["horas"] = "Horas inválidas."
+        errors["horasClase"] = "Horas invalidas."
 
     return errors
 
