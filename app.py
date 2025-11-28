@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 
-
 app = Flask(__name__)
 
 #in-memory storage
@@ -11,116 +10,146 @@ labeles_profesores = ["id", "nombres", "apellidos", "numeroEmpleado", "horasClas
 
 #VALIDACIONES
 def validar_id(id):
+    """Valide que l'ID est un entier positif"""
     try:
         id = int(id)
-        return id
-    except ValueError:
+        if id > 0:
+            return id
         return None
-    
+    except (ValueError, TypeError):
+        return None
+
+def validar_matricula(matricula):
+    """Valide que la matricule commence par A suivi de chiffres"""
+    if not isinstance(matricula, str):
+        return None
+    matricula = matricula.strip()
+    if not matricula:
+        return None
+    if not matricula.startswith('A'):
+        return None
+    if not matricula[1:].isdigit():
+        return None
+    return matricula
+
 def validar_nombre(nombre):
+    """Valide que le nom contient uniquement des lettres, espaces, tirets et apostrophes"""
     if not isinstance(nombre, str):
+        return None
+    nombre = nombre.strip()
+    if not nombre:
         return None
     for ch in nombre:
         if not (ch.isalpha() or ch in " -'"):
             return None
     return nombre
 
-# def not_empty(data):
-#     if not data:
-#         return False
-#     return True
+def validar_promedio(promedio):
+    """Valide que le promedio est un nombre entre 0 et 100"""
+    try:
+        promedio = float(promedio)
+        if 0 <= promedio <= 100:
+            return promedio
+        return None
+    except (ValueError, TypeError):
+        return None
 
 def validar_horas(horas):
+    """Valide que les heures sont un entier positif"""
     try:
-        horas = float(horas)
-        if horas < 0:
-            return None
-        return horas
-    except ValueError:
+        horas = int(horas)
+        if horas > 0:
+            return horas
         return None
-    
-def validar_matricula(matricula):
-    if not isinstance(matricula, str):
+    except (ValueError, TypeError):
         return None
-    if matricula[0].isalpha() and matricula[1:].isdigit():
-        return matricula
-    return None
-
-def validar_promedio(promedio):
-    if not isinstance(promedio, (int, float)):
-        return None
-    if promedio < 0 or promedio > 100:
-        return None
-    return promedio
-
-def validar_labels(payload, labeles):
-    for label in payload.keys():
-        if label not in labeles:
-            return False
-    return True
 
 def validar_alumno_payload(payload):
+    """Valide le payload pour créer/modifier un alumno"""
     errors = {}
-
-    if not validar_labels(payload, labeles_alumnos):
-        errors["labels"] = "Etiquetas invalidas en el payload."
-        return errors
-
-    id = validar_id(payload.get("id"))
-    if id is None: 
-        errors["id"] = "ID invalido."
-
-    nombres = validar_nombre(payload.get("nombres"))
-    if nombres is None: 
-        errors["nombres"] = "Nombre invalido."
-
-    apellidos = validar_nombre(payload.get("apellidos"))
-    if apellidos is None: 
-        errors["apellidos"] = "Apellido invalido."
-
-    matricula = validar_matricula(payload.get("matricula"))
-    if matricula is None:   
-        errors["matricula"] = "Matricula invalida."
     
-    promedio = validar_promedio(payload.get("promedio"))
-    if promedio is None:   
-        errors["promedio"] = "Promedio invalido."
-
+    # ID - obligatoire pour POST
+    if "id" not in payload:
+        errors["id"] = "ID requerido."
+    else:
+        id_validado = validar_id(payload.get("id"))
+        if id_validado is None:
+            errors["id"] = "ID inválido."
+    
+    # Nombres - optionnel, mais si présent doit être valide
+    if "nombres" in payload:
+        nombres = validar_nombre(payload.get("nombres"))
+        if nombres is None:
+            errors["nombres"] = "Nombre inválido."
+    
+    # Apellidos - optionnel, mais si présent doit être valide
+    if "apellidos" in payload:
+        apellidos = validar_nombre(payload.get("apellidos"))
+        if apellidos is None:
+            errors["apellidos"] = "Apellido inválido."
+    
+    # Matricula - optionnel, mais si présent doit être valide
+    if "matricula" in payload:
+        matricula = validar_matricula(payload.get("matricula"))
+        if matricula is None:
+            errors["matricula"] = "Matrícula inválida."
+    
+    # Promedio - optionnel, mais si présent doit être valide
+    if "promedio" in payload:
+        promedio = validar_promedio(payload.get("promedio"))
+        if promedio is None:
+            errors["promedio"] = "Promedio inválido."
+    
     return errors
 
 def validar_profesor_payload(payload):
+    """Valide le payload pour créer/modifier un profesor"""
     errors = {}
-
-    if not validar_labels(payload, labeles_profesores):
-        errors["labels"] = "Etiquetas invalidas en el payload."
-        return errors
-
-    id = validar_id(payload.get("id"))
-    if id is None: 
-        errors["id"] = "ID invalido."
-
-    numeroEmpleado = validar_id(payload.get("numeroEmpleado"))
-    if numeroEmpleado is None: 
-        errors["numeroEmpleado"] = "Numero de empleado invalido."
-
-    nombres = validar_nombre(payload.get("nombres"))
-    if nombres is None: 
-        errors["nombres"] = "Nombre invalido."
-
-    apellidos = validar_nombre(payload.get("apellidos"))
-    if apellidos is None: 
-        errors["apellidos"] = "Apellido invalido."
-
-    horasClase = validar_horas(payload.get("horasClase"))
-    if horasClase is None:   
-        errors["horasClase"] = "Horas invalidas."
-
+    
+    # ID - obligatoire pour POST
+    if "id" not in payload:
+        errors["id"] = "ID requerido."
+    else:
+        id_validado = validar_id(payload.get("id"))
+        if id_validado is None:
+            errors["id"] = "ID inválido."
+    
+    # Nombres - optionnel
+    if "nombres" in payload:
+        nombres = validar_nombre(payload.get("nombres"))
+        if nombres is None:
+            errors["nombres"] = "Nombre inválido."
+    
+    # Apellidos - optionnel
+    if "apellidos" in payload:
+        apellidos = validar_nombre(payload.get("apellidos"))
+        if apellidos is None:
+            errors["apellidos"] = "Apellido inválido."
+    
+    # NumeroEmpleado - optionnel
+    if "numeroEmpleado" in payload:
+        numero = validar_id(payload.get("numeroEmpleado"))
+        if numero is None:
+            errors["numeroEmpleado"] = "Número de empleado inválido."
+    
+    # HorasClase - optionnel
+    if "horasClase" in payload:
+        horas = validar_horas(payload.get("horasClase"))
+        if horas is None:
+            errors["horasClase"] = "Horas de clase inválidas."
+    
     return errors
 
-#ERROR HANDLER
-@app.errorhandler(Exception)
-def handle_exception(e):
-    if isinstance(e, KeyError):
-        return jsonify({"error": "Clave no encontrada en el payload."}), 400
-    return jsonify({"error": "Error interno del servidor."}), 500
+#ERROR HANDLERS
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Recurso no encontrado"}), 404
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({"error": "Método no permitido"}), 405
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "Error interno del servidor"}), 500
 
