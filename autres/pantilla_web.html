@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prénom Nom — CV</title>
+  <meta name="description" content="Resume / CV - Prénom Nom. Contact, Projets, Études, Expérience" />
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa4b2;
+      --accent:#6ee7b7;
+      --glass: rgba(255,255,255,0.03);
+      --card-2: #0e1622;
+      --radius: 12px;
+      --max-width: 1100px;
+      --gap: 20px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color-scheme: dark;
+      color: #e6eef6;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: linear-gradient(180deg, #071021 0%, #081424 60%);
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:32px 16px;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.45;
+    }
+
+    .container{
+      width:100%;
+      max-width:var(--max-width);
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:var(--gap);
+      align-items:start;
+    }
+
+    /* SIDEBAR */
+    .sidebar{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      padding:24px;
+      box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+      min-height:260px;
+      position:sticky;
+      top:28px;
+    }
+    .profile-pic{
+      width:112px;
+      height:112px;
+      border-radius:14px;
+      display:block;
+      object-fit:cover;
+      margin-bottom:14px;
+      border:2px solid rgba(255,255,255,0.04);
+      background:linear-gradient(135deg,#ffffff05,#00000020);
+    }
+    .name{
+      font-size:20px;
+      font-weight:700;
+      margin:0 0 6px 0;
+    }
+    .role{
+      font-size:13px;
+      color:var(--muted);
+      margin:0 0 14px 0;
+    }
+    .contact{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:8px;
+    }
+    .contact .item{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .pill{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.02);
+      color:var(--muted);
+      font-size:13px;
+    }
+    .skills{
+      margin-top:16px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .skill{
+      background: rgba(255,255,255,0.02);
+      padding:8px 10px;
+      border-radius:999px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    /* MAIN */
+    main{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      padding:28px;
+      box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+    }
+    header.hero{
+      display:flex;
+      gap:18px;
+      align-items:flex-start;
+      margin-bottom:18px;
+    }
+    .hero-left{
+      flex:1;
+    }
+    .title{
+      font-size:22px;
+      font-weight:700;
+      margin:0 0 6px 0;
+      letter-spacing: -0.2px;
+    }
+    .subtitle{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .summary{
+      margin-top:14px;
+      color:#cfe7f2;
+      font-size:14px;
+      background:var(--glass);
+      padding:14px;
+      border-radius:10px;
+    }
+
+    section{
+      margin-top:22px;
+    }
+
+    .section-head{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .section-head h2{
+      margin:0;
+      font-size:16px;
+      letter-spacing: -0.2px;
+    }
+    .section-head p{margin:0;color:var(--muted);font-size:13px}
+
+    /* Education / Experience lists */
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border-radius:10px;
+      padding:14px;
+      margin-bottom:10px;
+      border: 1px solid rgba(255,255,255,0.02);
+    }
+    .job-title{font-weight:700;margin:0;font-size:14px}
+    .meta{font-size:13px;color:var(--muted);margin-top:6px}
+    .desc{margin-top:10px;color:#bcd8e7;font-size:13px}
+
+    /* Projects grid */
+    .projects{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+
+    footer{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+    }
+
+    /* Responsive */
+    @media (max-width:980px){
+      .container{grid-template-columns:1fr; padding-bottom:32px}
+      .sidebar{position:relative; top:0}
+      header.hero{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+
+    <!-- SIDEBAR: contact & quick info -->
+    <aside class="sidebar" aria-label="Informations personnelles">
+      <img class="profile-pic" src="photo.jpg" alt="Photo de profil — remplacer">
+      <h1 class="name">Mathias Muhulet</h1>
+      <div class="role">Estudiante de intercambio en la UADY</div>
+
+      <div class="contact" aria-label="Contact">
+        <div class="item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M3 5.5A2.5 2.5 0 015.5 3h13A2.5 2.5 0 0121 5.5v13A2.5 2.5 0 0118.5 21h-13A2.5 2.5 0 013 18.5v-13z" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.2"/></svg> <span class="pill">m25090057@alumnos.uady.mx</span></div>
+        <div class="item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M22 16.92V21a1 1 0 01-1.11 1 19.86 19.86 0 01-8.63-3.12 19.54 19.54 0 01-6-6A19.86 19.86 0 013 3.11 1 1 0 014 2h3.09a1 1 0 01.98.76 12.27 12.27 0 00.7 2.29 1 1 0 01-.24 1l-1.2 1.2a16 16 0 007.07 7.07l1.2-1.2a1 1 0 011-.24c.77.24 1.6.41 2.29.7a1 1 0 01.76.98V22z" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.2"/></svg> <span class="pill">9992671842</span></div>
+        <div class="item"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" opacity="0.08"/></svg> <span class="pill">Marsella, Francia</span></div>
+      </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+      <!-- Section 1: Présentation -->
+      <header class="hero" id="presentation" aria-labelledby="h-presentation">
+        <div class="hero-left">
+          <h2 id="h-presentation" class="title">Mathias Muhulet — Estudiante</h2>
+          <p class="subtitle">Estudiante en quinto ano de estudio</p>
+
+          <div class="summary" role="region" aria-label="Résumé">
+            <strong>Perfil :</strong> Soy un estudiante que viene de Francia para estudiar informatica en una universidad en Mérida, México. Quiero trabajar después como nomada digital en varios paises de américa latina
+          </div>
+        </div>
+
+      </header>
+
+      <!-- Section 2: Éducation -->
+      <section id="education" aria-labelledby="h-education">
+        <div class="section-head">
+          <h2 id="h-education">Educacion</h2>
+          <p>Formacion y cursos</p>
+        </div>
+
+        <!-- Degree -->
+        <article class="card" role="article" aria-label="Diplôme">
+          <div class="job-title">Licenciatura de informatica en la UADY/Escuela de Ingenieria informatica en la INSA Lyon</div>
+          <div class="meta">2022 — Hoy · Informatica e ingenieria</div>
+          <div class="desc">
+            Después de 2 anos de clase preparatoria, ingresé el departamento de informatica de la INSA Lyon, donde estudié los dos anos pasados. Para acabar mi carrera universitaria tenia que hacer un intercambio al extranjero.
+          </div>
+        </article>
+
+        <!-- Course list -->
+        <div class="card" role="region" aria-label="Cours pertinents">
+          <div class="job-title">Cursos en la UADY</div>
+          <div class="meta">Licencia de Matematicas e informatica</div>
+          <ul style="margin-top:10px;color:#cfe7f2">
+            <li>AWS Cloud foundation</li>
+            <li>Geometria Euclidiana</li>
+            <li>Gestion de dispositivos IT</li>
+            <li>Responsabilidad Social Universitaria</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 3: Expérience -->
+      <section id="experience" aria-labelledby="h-experience">
+        <div class="section-head">
+          <h2 id="h-experience">Experiencia</h2>
+          <p>Practicas y proyectos</p>
+        </div>
+
+        <!-- Project / Job 1 -->
+        <article class="card" role="article" aria-label="Projet 1">
+          <div class="job-title">Proyecto: analysis de la cualidad de un juego de datos</div>
+          <div class="meta">Proyecto escolar · 2025</div>
+          <div class="desc">
+             evaluación de la calidad de un conjunto de datos para aprendizaje automático
+          </div>
+        </article>
+
+        <!-- Project / Job 2 -->
+        <article class="card" role="article" aria-label="Stage ou autre">
+          <div class="job-title">Practica : 3 meses en salud digital en GCS Tesis</div>
+          <div class="meta">Practica corta · 2025</div>
+          <div class="desc">
+            Desarollo de herramientas digitales en una empresa de servicios informáticos para los establecimientos de salud
+          </div>
+        </article>
+
+      </section>
+
+      <footer>
+        © <span id="year"></span> Mathias Muhulet — Contacto: m25090057@alumnos.uady.mx
+      </footer>
+    </main>
+
+  </div>
+
+  <script>
+    // small niceties
+    document.getElementById('year').textContent = new Date().getFullYear();
+    // smooth scroll for anchor links (if you add nav)
+    (function(){
+      if ('scrollBehavior' in document.documentElement.style) return;
+      document.querySelectorAll('a[href^="#"]').forEach(a=>{
+        a.addEventListener('click', e=>{
+          e.preventDefault();
+          const id = a.getAttribute('href').slice(1);
+          const el = document.getElementById(id);
+          if (el) el.scrollIntoView({behavior:'smooth'});
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+
+

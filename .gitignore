@@ -1,24 +1,30 @@
-# Environnements virtuels
+# venv
 venv/
 env/
-ENV/
 
-# Fichiers Python
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 
-# Fichiers VS Code
+# VS Code
 .vscode/
 
 # Logs
 *.log
 
-# Fichiers système
+# system files
 .DS_Store
 Thumbs.db
 
 # Git
 .git/index.lock
+
+# SQLite  database files
+database.db
+*.db
+
+# migrations
+migrations/
