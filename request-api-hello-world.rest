@@ -1,4 +1,18 @@
 ###
+# Créer un alumno dans RDS MySQL
+POST http://127.0.0.1:5000/alumnos HTTP/1.1
+Content-Type: application/json
+
+{
+  "nombres": "Pedro",
+  "apellidos": "Martinez",
+  "matricula": "A999888",
+  "promedio": 91.5,
+  "password": "testpass"
+}
+
+###
+# Récupérer tous les alumnos
 GET http://127.0.0.1:5000/alumnos HTTP/1.1
 Content-Type: application/json
 

@@ -6,11 +6,31 @@ import os
 app = Flask(__name__)
 
 # ===== CONFIGURATION BASE DE DONNÉES =====
-# Chemin absolu vers le fichier de base de données
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'alumnos_profesores.db')
-# Désactiver le tracking des modifications (améliore les performances)
+
+# Détection de l'environnement (local vs production)
+if os.environ.get('ENV') == 'production':
+    # ===== CONFIGURATION RDS MYSQL (PRODUCTION) =====
+    
+    DB_USER = os.environ.get('DB_USER', 'm25090057')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'Eselproyectofinal!')
+    DB_HOST = os.environ.get('DB_HOST', 'database-proyecto-final.cslvaacprg0m.us-east-1.rds.amazonaws.com')
+    DB_PORT = os.environ.get('DB_PORT', '3306')  # MySQL port
+    DB_NAME = os.environ.get('DB_NAME', 'database-proyecto-final')
+    
+    # ✅ FORMAT MYSQL (avec pymysql)
+    DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    
+else:
+    # ===== CONFIGURATION SQLITE (LOCAL/DEV) =====
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'alumnos_profesores.db')
+
+# Configuration Flask
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Logging de la connexion (debug)
+print(f"📊 Connexion à la base de données : {DATABASE_URI.split('@')[-1] if '@' in DATABASE_URI else 'SQLite local'}")
 
 # Initialiser SQLAlchemy (ORM) et Migrate (migrations)
 db = SQLAlchemy(app)
