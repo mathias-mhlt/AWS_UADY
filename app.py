@@ -1,14 +1,31 @@
 from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+import os
 
 app = Flask(__name__)
 
-#in-memory storage
-alumnos = []
-profesores = []
+# ===== CONFIGURATION BASE DE DONNÉES =====
+# Chemin absolu vers le fichier de base de données
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'alumnos_profesores.db')
+# Désactiver le tracking des modifications (améliore les performances)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialiser SQLAlchemy (ORM) et Migrate (migrations)
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+# ===== SUPPRESSION DE L'IN-MEMORY STORAGE =====
+# AVANT : alumnos = []
+# AVANT : profesores = []
+# MAINTENANT : Les données sont dans la base de données
+
+# Labels pour référence (optionnel, peut être supprimé)
 labeles_alumnos = ["id", "nombres", "apellidos", "matricula", "promedio"]
 labeles_profesores = ["id", "nombres", "apellidos", "numeroEmpleado", "horasClase"]
 
-#VALIDACIONES
+#VALIDATIONS
 def validar_id(id):
     """Valide que l'ID est un entier positif"""
     try:
@@ -68,13 +85,13 @@ def validar_alumno_payload(payload):
     """Valide le payload pour créer/modifier un alumno"""
     errors = {}
     
-    # ID - obligatoire pour POST
-    if "id" not in payload:
-        errors["id"] = "ID requerido."
-    else:
-        id_validado = validar_id(payload.get("id"))
-        if id_validado is None:
-            errors["id"] = "ID inválido."
+    # # ID - obligatoire pour POST
+    # if "id" not in payload:
+    #     errors["id"] = "ID requerido."
+    # else:
+    #     id_validado = validar_id(payload.get("id"))
+    #     if id_validado is None:
+    #         errors["id"] = "ID inválido."
     
     # Nombres - optionnel, mais si présent doit être valide
     if "nombres" in payload:
@@ -106,13 +123,13 @@ def validar_profesor_payload(payload):
     """Valide le payload pour créer/modifier un profesor"""
     errors = {}
     
-    # ID - obligatoire pour POST
-    if "id" not in payload:
-        errors["id"] = "ID requerido."
-    else:
-        id_validado = validar_id(payload.get("id"))
-        if id_validado is None:
-            errors["id"] = "ID inválido."
+    # # ID - obligatoire pour POST
+    # if "id" not in payload:
+    #     errors["id"] = "ID requerido."
+    # else:
+    #     id_validado = validar_id(payload.get("id"))
+    #     if id_validado is None:
+    #         errors["id"] = "ID inválido."
     
     # Nombres - optionnel
     if "nombres" in payload:
@@ -139,6 +156,74 @@ def validar_profesor_payload(payload):
             errors["horasClase"] = "Horas de clase inválidas."
     
     return errors
+
+# ===== MODÈLES DE BASE DE DONNÉES =====
+
+class Alumno(db.Model):
+    """
+    Modèle représentant un étudiant dans la base de données.
+    
+    Nouveaux champs :
+    - fotoPerfilUrl : URL de la photo de profil sur S3
+    - password : Mot de passe de l'alumno (stocké en clair pour cet exercice)
+    """
+    __tablename__ = 'alumno'
+    
+    # ID auto-incrémenté par la base de données
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    
+    # Champs existants
+    nombres = db.Column(db.String(100), nullable=True)
+    apellidos = db.Column(db.String(100), nullable=True)
+    matricula = db.Column(db.String(20), nullable=True)
+    promedio = db.Column(db.Float, nullable=True)
+    
+    # ===== NOUVEAUX CHAMPS =====
+    fotoPerfilUrl = db.Column(db.String(500), nullable=True)  # URL de S3
+    password = db.Column(db.String(255), nullable=True)       # Mot de passe
+    
+    def to_dict(self):
+        """
+        Convertit l'objet Alumno en dictionnaire JSON.
+        Inclut maintenant fotoPerfilUrl et password.
+        """
+        return {
+            'id': self.id,
+            'nombres': self.nombres,
+            'apellidos': self.apellidos,
+            'matricula': self.matricula,
+            'promedio': self.promedio,
+            'fotoPerfilUrl': self.fotoPerfilUrl,  # ✅ Nouveau
+            'password': self.password              # ✅ Nouveau
+        }
+
+
+class Profesor(db.Model):
+    """
+    Modèle représentant un professeur dans la base de données.
+    """
+    __tablename__ = 'profesor'
+    
+    # ID auto-incrémenté
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    
+    # Champs optionnels
+    nombres = db.Column(db.String(100), nullable=True)
+    apellidos = db.Column(db.String(100), nullable=True)
+    numeroEmpleado = db.Column(db.Integer, nullable=True)
+    horasClase = db.Column(db.Integer, nullable=True)
+    
+    def to_dict(self):
+        """
+        Convertit l'objet Profesor en dictionnaire JSON.
+        """
+        return {
+            'id': self.id,
+            'nombres': self.nombres,
+            'apellidos': self.apellidos,
+            'numeroEmpleado': self.numeroEmpleado,
+            'horasClase': self.horasClase
+        }
 
 #ERROR HANDLERS
 @app.errorhandler(404)

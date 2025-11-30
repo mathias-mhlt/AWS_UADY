@@ -1,21 +1,37 @@
 ###
-GET http://ec2-54-81-249-180.compute-1.amazonaws.com/alumnos HTTP/1.1
+GET http://127.0.0.1:5000/alumnos HTTP/1.1
 Content-Type: application/json
 
 ###
-POST http://ec2-98-86-226-154.compute-1.amazonaws.com/alumnos HTTP/1.1
+
+GET http://127.0.0.1:5000/alumnos/3 HTTP/1.1
+Content-Type: application/json
+
+###
+# Test 1 : Créer un alumno avec password
+POST http://127.0.0.1:5000/alumnos HTTP/1.1
 Content-Type: application/json
 
 {
-  "id": 1,
   "nombres": "Juan",
   "apellidos": "Perez",
   "matricula": "A123456",
-  "promedio": 85.5
+  "promedio": 85.5,
+  "password": "secret123"
 }
 
 ###
-DELETE http://ec2-98-86-226-154.compute-1.amazonaws.com/alumnos/1 HTTP/1.1
+# Test 2 : Récupérer l'alumno (doit inclure password et fotoPerfilUrl)
+GET http://127.0.0.1:5000/alumnos/3 HTTP/1.1
+Content-Type: application/json
+
+###
+# Test 3 : Upload d'une photo de profil
+# ⚠️ Ce test ne peut PAS être fait avec .rest (multipart/form-data)
+# Utiliser Postman ou curl (voir ci-dessous)
+
+###
+DELETE http://127.0.0.1:5000/alumnos/2 HTTP/1.1
 Content-Type: application/json
 
 ###

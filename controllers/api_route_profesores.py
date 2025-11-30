@@ -1,57 +1,70 @@
 from flask import request, jsonify
-from app import app, profesores, validar_nombre, validar_horas, validar_id, validar_profesor_payload
+from app import app, db, Profesor, validar_nombre, validar_horas, validar_id, validar_profesor_payload
 
 # Champs autorisés dans PUT (id sera ignoré mais accepté)
 CAMPOS_PERMITIDOS_EN_PUT = {"id", "nombres", "apellidos", "numeroEmpleado", "horasClase"}
 
 @app.route("/profesores", methods=["GET"])
 def profesores_get():
-    """Liste tous les profesores"""
-    return jsonify(profesores), 200
+    """Liste tous les profesores depuis la base de données"""
+    profesores = Profesor.query.all()  # SELECT * FROM profesor
+    return jsonify([profesor.to_dict() for profesor in profesores]), 200
+
 
 @app.route("/profesores", methods=["POST"])
 def profesores_create():
-    """Crée un nouveau profesor"""
+    """Crée un nouveau profesor dans la base de données"""
     data = request.get_json()
 
-    id = data.get("id")
+    # L'ID n'est PLUS extrait (auto-généré)
     nombres = data.get("nombres")
     apellidos = data.get("apellidos")
     numeroEmpleado = data.get("numeroEmpleado")
     horasClase = data.get("horasClase")
 
     errors = validar_profesor_payload(data)
-
     if errors:
         return jsonify({"errors": errors}), 400
 
-    nuevo_profesor = {
-        "id": id,
-        "nombres": nombres,
-        "apellidos": apellidos,
-        "numeroEmpleado": numeroEmpleado,
-        "horasClase": horasClase
-    }
-    profesores.append(nuevo_profesor)
+    # Création d'un objet Profesor
+    nuevo_profesor = Profesor(
+        nombres=nombres,
+        apellidos=apellidos,
+        numeroEmpleado=numeroEmpleado,
+        horasClase=horasClase
+    )
+    
+    # Insertion dans la BD
+    db.session.add(nuevo_profesor)
+    db.session.commit()
 
-    return jsonify(nuevo_profesor), 201
+    return jsonify(nuevo_profesor.to_dict()), 201
+
 
 @app.route("/profesores/<int:profesor_id>", methods=["GET"])
 def profesor_get(profesor_id):
     """Récupère un profesor par son ID"""
-    for profesor in profesores:
-        if profesor["id"] == profesor_id:
-            return jsonify(profesor), 200
-    return jsonify({"error": "Profesor no encontrado"}), 404
+    profesor = Profesor.query.get(profesor_id)
+    
+    if profesor is None:
+        return jsonify({"error": "Profesor no encontrado"}), 404
+    
+    return jsonify(profesor.to_dict()), 200
+
 
 @app.route("/profesores/<int:profesor_id>", methods=["DELETE"])
 def profesor_delete(profesor_id):
-    """Supprime un profesor par son ID"""
-    for i, profesor in enumerate(profesores):
-        if profesor["id"] == profesor_id:
-            del profesores[i]
-            return jsonify({"message": "Profesor eliminado"}), 200
-    return jsonify({"error": "Profesor no encontrado"}), 404
+    """Supprime un profesor de la base de données"""
+    profesor = Profesor.query.get(profesor_id)
+    
+    if profesor is None:
+        return jsonify({"error": "Profesor no encontrado"}), 404
+    
+    db.session.delete(profesor)
+    db.session.commit()
+    
+    return jsonify({"message": "Profesor eliminado"}), 200
+
 
 @app.route("/profesores/<int:profesor_id>", methods=["PUT"])
 def profesor_update(profesor_id):
@@ -65,7 +78,7 @@ def profesor_update(profesor_id):
             "error": f"Campos no permitidos: {', '.join(claves_invalidas)}"
         }), 400
     
-    # Retirer l'ID du body (on utilise celui de l'URL)
+    # Retirer l'ID du body
     data_to_update = {k: v for k, v in data.items() if k != "id"}
     
     # Valider les champs à mettre à jour
@@ -103,11 +116,19 @@ def profesor_update(profesor_id):
     if errors:
         return jsonify({"errors": errors}), 400
     
-    for profesor in profesores:
-        if profesor["id"] == profesor_id:
-            profesor.update(validated_data)
-            return jsonify(profesor), 200
+    # Récupération de l'objet depuis la BD
+    profesor = Profesor.query.get(profesor_id)
     
-    return jsonify({"error": "Profesor no encontrado"}), 404
+    if profesor is None:
+        return jsonify({"error": "Profesor no encontrado"}), 404
+    
+    # Modification des attributs
+    for key, value in validated_data.items():
+        setattr(profesor, key, value)
+    
+    # Sauvegarde dans la BD
+    db.session.commit()
+    
+    return jsonify(profesor.to_dict()), 200
 
 

@@ -1,61 +1,114 @@
 from flask import request, jsonify
-from app import app, alumnos, validar_nombre, validar_matricula, validar_promedio, validar_alumno_payload
+from app import app, db, Alumno, validar_nombre, validar_matricula, validar_promedio, validar_alumno_payload
+from services.s3_service import S3Service
+
+# Initialiser le service S3
+s3_service = S3Service()
 
 # Champs autorisés dans PUT (id sera ignoré mais accepté)
 CAMPOS_PERMITIDOS_EN_PUT = {"id", "nombres", "apellidos", "matricula", "promedio"}
 
 @app.route("/alumnos", methods=["GET"])
 def alumnos_get():
-    """Liste tous les alumnos"""
-    return jsonify(alumnos), 200
+    """
+    Liste tous les alumnos depuis la base de données.
+    
+    Logique :
+    1. Alumno.query.all() récupère TOUS les enregistrements de la table 'alumno'
+    2. to_dict() convertit chaque objet Alumno en dictionnaire JSON
+    3. List comprehension [alumno.to_dict() for ...] crée une liste de dictionnaires
+    """
+    alumnos = Alumno.query.all()  # SELECT * FROM alumno
+    return jsonify([alumno.to_dict() for alumno in alumnos]), 200
+
 
 @app.route("/alumnos", methods=["POST"])
 def alumnos_create():
-    """Crée un nouvel alumno"""
+    """
+    Crée un nouvel alumno dans la base de données.
+    Accepte maintenant le champ 'password'.
+    """
     data = request.get_json()
 
-    id = data.get("id")
     nombres = data.get("nombres")
     apellidos = data.get("apellidos")
     matricula = data.get("matricula")
     promedio = data.get("promedio")
+    password = data.get("password")  # ✅ Nouveau champ
 
+    # Validation (sans ID)
     errors = validar_alumno_payload(data)
-
     if errors:
         return jsonify({"errors": errors}), 400
 
-    nuevo_alumno = {
-        "id": id,
-        "nombres": nombres,
-        "apellidos": apellidos,
-        "matricula": matricula,
-        "promedio": promedio
-    }
-    alumnos.append(nuevo_alumno)
+    # Création d'un objet Alumno
+    nuevo_alumno = Alumno(
+        nombres=nombres,
+        apellidos=apellidos,
+        matricula=matricula,
+        promedio=promedio,
+        password=password  # ✅ Inclure le password
+    )
+    
+    db.session.add(nuevo_alumno)
+    db.session.commit()
 
-    return jsonify(nuevo_alumno), 201
+    return jsonify(nuevo_alumno.to_dict()), 201
+
 
 @app.route("/alumnos/<int:alumno_id>", methods=["GET"])
 def alumno_get(alumno_id):
-    """Récupère un alumno par son ID"""
-    for alumno in alumnos:
-        if alumno["id"] == alumno_id:
-            return jsonify(alumno), 200
-    return jsonify({"error": "Alumno no encontrado"}), 404
+    """
+    Récupère un alumno par son ID.
+    
+    Logique :
+    - Alumno.query.get(id) : Recherche par clé primaire
+    - Équivalent SQL : SELECT * FROM alumno WHERE id = ?
+    """
+    alumno = Alumno.query.get(alumno_id)
+    
+    # Si aucun résultat, retourner 404
+    if alumno is None:
+        return jsonify({"error": "Alumno no encontrado"}), 404
+    
+    return jsonify(alumno.to_dict()), 200
+
 
 @app.route("/alumnos/<int:alumno_id>", methods=["DELETE"])
 def alumno_delete(alumno_id):
-    """Supprime un alumno par son ID"""
-    for i, alumno in enumerate(alumnos):
-        if alumno["id"] == alumno_id:
-            del alumnos[i]
-            return jsonify({"message": "Alumno eliminado"}), 200
-    return jsonify({"error": "Alumno no encontrado"}), 404
+    """
+    Supprime un alumno de la base de données.
+    
+    Logique :
+    1. Récupérer l'objet depuis la BD
+    2. Le marquer pour suppression (db.session.delete)
+    3. Confirmer la transaction (db.session.commit)
+    """
+    alumno = Alumno.query.get(alumno_id)
+    
+    if alumno is None:
+        return jsonify({"error": "Alumno no encontrado"}), 404
+    
+    # Marquer pour suppression
+    db.session.delete(alumno)
+    
+    # Exécuter le DELETE
+    # Équivalent SQL : DELETE FROM alumno WHERE id = ?
+    db.session.commit()
+    
+    return jsonify({"message": "Alumno eliminado"}), 200
+
 
 @app.route("/alumnos/<int:alumno_id>", methods=["PUT"])
 def alumno_update(alumno_id):
-    """Met à jour un alumno existant"""
+    """
+    Met à jour un alumno existant.
+    
+    Changements majeurs :
+    - Récupération depuis la BD (pas depuis une liste)
+    - Modification des attributs de l'objet
+    - db.session.commit() pour sauvegarder
+    """
     data = request.get_json()
     
     # Vérifier les clés invalides
@@ -103,12 +156,81 @@ def alumno_update(alumno_id):
     if errors:
         return jsonify({"errors": errors}), 400
     
-    for alumno in alumnos:
-        if alumno["id"] == alumno_id:
-            alumno.update(validated_data)
-            return jsonify(alumno), 200
+    # ===== RÉCUPÉRATION DE L'ALUMNO DEPUIS LA BD =====
+    alumno = Alumno.query.get(alumno_id)
     
-    return jsonify({"error": "Alumno no encontrado"}), 404
+    if alumno is None:
+        return jsonify({"error": "Alumno no encontrado"}), 404
+    
+    # ===== MODIFICATION DES ATTRIBUTS =====
+    # Avant : alumno.update(validated_data) sur un dictionnaire
+    # Maintenant : Modification directe des attributs de l'objet
+    for key, value in validated_data.items():
+        setattr(alumno, key, value)  # Équivalent à alumno.nombres = value
+    
+    # ===== SAUVEGARDE DANS LA BD =====
+    # db.session.commit() : Exécute l'UPDATE
+    # Équivalent SQL : UPDATE alumno SET nombres=?, apellidos=? WHERE id=?
+    db.session.commit()
+    
+    return jsonify(alumno.to_dict()), 200
+
+
+@app.route("/alumnos/<int:alumno_id>/fotoPerfil", methods=["POST"])
+def upload_foto_perfil(alumno_id):
+    """
+    Upload une photo de profil pour un alumno.
+    
+    Endpoint : POST /alumnos/{id}/fotoPerfil
+    Content-Type : multipart/form-data
+    Body : { "foto": <fichier image> }
+    
+    Logique :
+    1. Vérifier que l'alumno existe
+    2. Récupérer le fichier depuis la requête
+    3. Uploader vers S3
+    4. Sauvegarder l'URL dans la base de données
+    5. Retourner les données de l'alumno avec la nouvelle URL
+    """
+    
+    # ===== VÉRIFICATION DE L'EXISTENCE DE L'ALUMNO =====
+    alumno = Alumno.query.get(alumno_id)
+    if alumno is None:
+        return jsonify({"error": "Alumno no encontrado"}), 404
+    
+    # ===== RÉCUPÉRATION DU FICHIER =====
+    # request.files est un dictionnaire contenant les fichiers uploadés
+    # La clé doit correspondre au nom du champ dans le formulaire
+    if 'foto' not in request.files:
+        return jsonify({"error": "No se proporcionó ninguna foto"}), 400
+    
+    file = request.files['foto']
+    
+    # Vérifier que le fichier n'est pas vide
+    if file.filename == '':
+        return jsonify({"error": "Nombre de archivo vacío"}), 400
+    
+    try:
+        # ===== UPLOAD VERS S3 =====
+        foto_url = s3_service.upload_foto_perfil(file, alumno_id)
+        
+        if foto_url is None:
+            return jsonify({"error": "Error al subir la foto a S3"}), 500
+        
+        # ===== SAUVEGARDE DE L'URL DANS LA BASE DE DONNÉES =====
+        alumno.fotoPerfilUrl = foto_url
+        db.session.commit()
+        
+        # ===== RETOUR DES DONNÉES COMPLÈTES =====
+        return jsonify(alumno.to_dict()), 200
+        
+    except ValueError as e:
+        # Extension de fichier non autorisée
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        # Erreur inattendue
+        print(f"Erreur lors de l'upload : {e}")
+        return jsonify({"error": "Error interno del servidor"}), 500
 
 
 
