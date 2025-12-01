@@ -1,9 +1,11 @@
 from flask import request, jsonify
 from app import app, db, Alumno, validar_nombre, validar_matricula, validar_promedio, validar_alumno_payload
 from services.s3_service import S3Service
+from services.sns_service import SNSService  # ✅ Nouveau import
 
-# Initialiser le service S3
+# Initialiser les services
 s3_service = S3Service()
+sns_service = SNSService()  # ✅ Nouveau service
 
 # Champs autorisés dans PUT (id sera ignoré mais accepté)
 CAMPOS_PERMITIDOS_EN_PUT = {"id", "nombres", "apellidos", "matricula", "promedio"}
@@ -231,6 +233,57 @@ def upload_foto_perfil(alumno_id):
         # Erreur inattendue
         print(f"Erreur lors de l'upload : {e}")
         return jsonify({"error": "Error interno del servidor"}), 500
+
+
+@app.route("/alumnos/<int:alumno_id>/email", methods=["POST"])
+def enviar_email_alumno(alumno_id):
+    """
+    Envoie une notification par email avec les informations d'un alumno.
+    
+    Endpoint : POST /alumnos/{id}/email
+    Content-Type : application/json
+    Body : {} (vide, optionnel)
+    
+    Logique :
+    1. Vérifier que l'alumno existe dans la base de données
+    2. Récupérer les informations complètes de l'alumno
+    3. Envoyer une notification SNS
+    4. SNS dispatche automatiquement l'email à tous les abonnés
+    5. Retourner un message de confirmation
+    
+    Codes de retour :
+    - 200 : Email envoyé avec succès
+    - 404 : Alumno non trouvé
+    - 500 : Erreur lors de l'envoi
+    """
+    
+    # ===== VÉRIFICATION DE L'EXISTENCE DE L'ALUMNO =====
+    alumno = Alumno.query.get(alumno_id)
+    
+    if alumno is None:
+        return jsonify({
+            "error": "Alumno no encontrado"
+        }), 404
+    
+    # ===== ENVOI DE LA NOTIFICATION SNS =====
+    success = sns_service.enviar_notificacion_alumno(alumno)
+    
+    if success:
+        return jsonify({
+            "message": "Notificación enviada correctamente",
+            "alumno": {
+                "id": alumno.id,
+                "nombres": alumno.nombres,
+                "apellidos": alumno.apellidos,
+                "matricula": alumno.matricula,
+                "promedio": alumno.promedio
+            }
+        }), 200
+    else:
+        return jsonify({
+            "error": "Error al enviar la notificación",
+            "details": "Verifique los logs del servidor para más información"
+        }), 500
 
 
 
