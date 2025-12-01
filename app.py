@@ -10,14 +10,13 @@ app = Flask(__name__)
 # Détection de l'environnement (local vs production)
 if os.environ.get('ENV') == 'production':
     # ===== CONFIGURATION RDS MYSQL (PRODUCTION) =====
-    
     DB_USER = os.environ.get('DB_USER', 'm25090057')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'Eselproyectofinal!')
     DB_HOST = os.environ.get('DB_HOST', 'database-proyecto-final.cslvaacprg0m.us-east-1.rds.amazonaws.com')
-    DB_PORT = os.environ.get('DB_PORT', '3306')  # MySQL port
+    DB_PORT = os.environ.get('DB_PORT', '3306')  # ✅ 3306 pour MySQL (pas 5432)
     DB_NAME = os.environ.get('DB_NAME', 'database-proyecto-final')
     
-    # ✅ FORMAT MYSQL (avec pymysql)
+    # ✅ Construction de l'URI pour MYSQL (pas PostgreSQL)
     DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     
 else:
@@ -180,63 +179,40 @@ def validar_profesor_payload(payload):
 # ===== MODÈLES DE BASE DE DONNÉES =====
 
 class Alumno(db.Model):
-    """
-    Modèle représentant un étudiant dans la base de données.
+    """Modèle représentant un étudiant"""
+    __tablename__ = 'alumnos'  # ✅ PLURIEL
     
-    Nouveaux champs :
-    - fotoPerfilUrl : URL de la photo de profil sur S3
-    - password : Mot de passe de l'alumno (stocké en clair pour cet exercice)
-    """
-    __tablename__ = 'alumno'
-    
-    # ID auto-incrémenté par la base de données
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    
-    # Champs existants
     nombres = db.Column(db.String(100), nullable=True)
     apellidos = db.Column(db.String(100), nullable=True)
     matricula = db.Column(db.String(20), nullable=True)
     promedio = db.Column(db.Float, nullable=True)
-    
-    # ===== NOUVEAUX CHAMPS =====
-    fotoPerfilUrl = db.Column(db.String(500), nullable=True)  # URL de S3
-    password = db.Column(db.String(255), nullable=True)       # Mot de passe
+    fotoPerfilUrl = db.Column(db.String(500), nullable=True)
+    password = db.Column(db.String(255), nullable=True)
     
     def to_dict(self):
-        """
-        Convertit l'objet Alumno en dictionnaire JSON.
-        Inclut maintenant fotoPerfilUrl et password.
-        """
         return {
             'id': self.id,
             'nombres': self.nombres,
             'apellidos': self.apellidos,
             'matricula': self.matricula,
             'promedio': self.promedio,
-            'fotoPerfilUrl': self.fotoPerfilUrl,  # ✅ Nouveau
-            'password': self.password              # ✅ Nouveau
+            'fotoPerfilUrl': self.fotoPerfilUrl,
+            'password': self.password
         }
 
 
 class Profesor(db.Model):
-    """
-    Modèle représentant un professeur dans la base de données.
-    """
-    __tablename__ = 'profesor'
+    """Modèle représentant un professeur"""
+    __tablename__ = 'profesores'  # ✅ PLURIEL
     
-    # ID auto-incrémenté
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    
-    # Champs optionnels
     nombres = db.Column(db.String(100), nullable=True)
     apellidos = db.Column(db.String(100), nullable=True)
     numeroEmpleado = db.Column(db.Integer, nullable=True)
     horasClase = db.Column(db.Integer, nullable=True)
     
     def to_dict(self):
-        """
-        Convertit l'objet Profesor en dictionnaire JSON.
-        """
         return {
             'id': self.id,
             'nombres': self.nombres,

@@ -83,3 +83,20 @@ Content-Type: application/json
 {
   "horasClase": 25
 }
+
+###
+# Test sur EC2 (RDS)
+POST http://ec2-3-90-151-247.compute-1.amazonaws.com/alumnos HTTP/1.1
+Content-Type: application/json
+
+{
+  "nombres": "Carlos",
+  "apellidos": "Lopez",
+  "matricula": "A345678",
+  "promedio": 88.0,
+  "password": "pass789"
+}
+
+###
+GET http://ec2-3-90-151-247.compute-1.amazonaws.com/alumnos HTTP/1.1
+Content-Type: application/json
