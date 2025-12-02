@@ -1,11 +1,13 @@
 from flask import request, jsonify
 from app import app, db, Alumno, validar_nombre, validar_matricula, validar_promedio, validar_alumno_payload
 from services.s3_service import S3Service
-from services.sns_service import SNSService  # ✅ Nouveau import
+from services.sns_service import SNSService
+from services.dynamodb_service import DynamoDBService  # ✅ Nouveau import
 
 # Initialiser les services
 s3_service = S3Service()
-sns_service = SNSService()  # ✅ Nouveau service
+sns_service = SNSService()
+dynamodb_service = DynamoDBService()  # ✅ Nouveau service
 
 # Champs autorisés dans PUT (id sera ignoré mais accepté)
 CAMPOS_PERMITIDOS_EN_PUT = {"id", "nombres", "apellidos", "matricula", "promedio"}
@@ -283,6 +285,204 @@ def enviar_email_alumno(alumno_id):
         return jsonify({
             "error": "Error al enviar la notificación",
             "details": "Verifique los logs del servidor para más información"
+        }), 500
+
+
+@app.route("/alumnos/<int:alumno_id>/session/login", methods=["POST"])
+def alumno_session_login(alumno_id):
+    """
+    Crée une session pour un alumno (login).
+    
+    Endpoint : POST /alumnos/{id}/session/login
+    Content-Type : application/json
+    Body : { "password": "secret123" }
+    
+    Logique :
+    1. Récupérer l'alumno depuis RDS
+    2. Vérifier que le password fourni correspond
+    3. Créer une entrée de session dans DynamoDB
+    4. Retourner le sessionString au client
+    
+    Codes de retour :
+    - 200 : Login réussi, session créée
+    - 400 : Password manquant dans la requête
+    - 401 : Password incorrect
+    - 404 : Alumno non trouvé
+    - 500 : Erreur lors de la création de session
+    """
+    
+    # ===== RÉCUPÉRATION DU PAYLOAD =====
+    data = request.get_json()
+    
+    if not data or 'password' not in data:
+        return jsonify({
+            "error": "Password requerido"
+        }), 400
+    
+    password = data.get('password')
+    
+    # ===== VÉRIFICATION DE L'EXISTENCE DE L'ALUMNO =====
+    alumno = Alumno.query.get(alumno_id)
+    
+    if alumno is None:
+        return jsonify({
+            "error": "Alumno no encontrado"
+        }), 404
+    
+    # ===== VÉRIFICATION DU PASSWORD =====
+    # ⚠️ En production, utiliser bcrypt pour comparer les hashes
+    if alumno.password != password:
+        return jsonify({
+            "error": "Contraseña incorrecta"
+        }), 401
+    
+    # ===== CRÉATION DE LA SESSION DANS DYNAMODB =====
+    session_data = dynamodb_service.crear_sesion(alumno_id)
+    
+    if session_data is None:
+        return jsonify({
+            "error": "Error al crear la sesión"
+        }), 500
+    
+    # ===== RETOUR DU SESSIONSTRING AU CLIENT =====
+    return jsonify({
+        "message": "Login exitoso",
+        "sessionString": session_data['sessionString'],
+        "sessionId": session_data['id'],
+        "alumnoId": session_data['alumnoId'],
+        "fecha": session_data['fecha']
+    }), 200
+
+
+@app.route("/alumnos/<int:alumno_id>/session/verify", methods=["POST"])
+def alumno_session_verify(alumno_id):
+    """
+    Vérifie si une session est valide.
+    
+    Endpoint : POST /alumnos/{id}/session/verify
+    Content-Type : application/json
+    Body : { "sessionString": "a1b2c3d4..." }
+    
+    Logique :
+    1. Récupérer le sessionString du payload
+    2. Vérifier dans DynamoDB si la session existe et est active
+    3. Retourner 200 si valide, 400 sinon
+    
+    Codes de retour :
+    - 200 : Session valide et active
+    - 400 : sessionString manquant, invalide, ou session inactive
+    - 404 : Alumno non trouvé
+    """
+    
+    # ===== RÉCUPÉRATION DU PAYLOAD =====
+    data = request.get_json()
+    
+    if not data or 'sessionString' not in data:
+        return jsonify({
+            "error": "sessionString requerido"
+        }), 400
+    
+    session_string = data.get('sessionString')
+    
+    # ===== VÉRIFICATION DE L'EXISTENCE DE L'ALUMNO =====
+    alumno = Alumno.query.get(alumno_id)
+    
+    if alumno is None:
+        return jsonify({
+            "error": "Alumno no encontrado"
+        }), 404
+    
+    # ===== VÉRIFICATION DE LA SESSION DANS DYNAMODB =====
+    is_valid = dynamodb_service.verificar_sesion(session_string)
+    
+    if is_valid:
+        # Récupérer les données complètes de la session
+        session = dynamodb_service.obtener_sesion_por_string(session_string)
+        
+        # Vérifier que la session appartient bien à cet alumno
+        if session and session.get('alumnoId') == alumno_id:
+            return jsonify({
+                "message": "Sesión válida",
+                "valid": True,
+                "sessionId": session['id'],
+                "alumnoId": session['alumnoId'],
+                "fecha": session['fecha']
+            }), 200
+        else:
+            return jsonify({
+                "error": "Sesión no pertenece a este alumno",
+                "valid": False
+            }), 400
+    else:
+        return jsonify({
+            "error": "Sesión inválida o inactiva",
+            "valid": False
+        }), 400
+
+
+@app.route("/alumnos/<int:alumno_id>/session/logout", methods=["POST"])
+def alumno_session_logout(alumno_id):
+    """
+    Ferme une session (logout).
+    
+    Endpoint : POST /alumnos/{id}/session/logout
+    Content-Type : application/json
+    Body : { "sessionString": "a1b2c3d4..." }
+    
+    Logique :
+    1. Récupérer le sessionString du payload
+    2. Mettre active = False dans DynamoDB
+    3. Retourner un message de confirmation
+    
+    Codes de retour :
+    - 200 : Logout réussi
+    - 400 : sessionString manquant ou session non trouvée
+    - 404 : Alumno non trouvé
+    - 500 : Erreur lors de la mise à jour
+    """
+    
+    # ===== RÉCUPÉRATION DU PAYLOAD =====
+    data = request.get_json()
+    
+    if not data or 'sessionString' not in data:
+        return jsonify({
+            "error": "sessionString requerido"
+        }), 400
+    
+    session_string = data.get('sessionString')
+    
+    # ===== VÉRIFICATION DE L'EXISTENCE DE L'ALUMNO =====
+    alumno = Alumno.query.get(alumno_id)
+    
+    if alumno is None:
+        return jsonify({
+            "error": "Alumno no encontrado"
+        }), 404
+    
+    # ===== VÉRIFICATION QUE LA SESSION APPARTIENT À CET ALUMNO =====
+    session = dynamodb_service.obtener_sesion_por_string(session_string)
+    
+    if session is None:
+        return jsonify({
+            "error": "Sesión no encontrada"
+        }), 400
+    
+    if session.get('alumnoId') != alumno_id:
+        return jsonify({
+            "error": "Sesión no pertenece a este alumno"
+        }), 400
+    
+    # ===== FERMETURE DE LA SESSION DANS DYNAMODB =====
+    success = dynamodb_service.cerrar_sesion(session_string)
+    
+    if success:
+        return jsonify({
+            "message": "Logout exitoso",
+            "sessionId": session['id']
+        }), 200
+    else:
+        return jsonify({
+            "error": "Error al cerrar la sesión"
         }), 500
 
 

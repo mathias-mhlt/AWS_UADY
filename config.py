@@ -3,9 +3,9 @@ import os
 # ===== CONFIGURATION AWS S3 =====
 # Ces valeurs proviennent de "AWS Details" dans AWS Academy
 
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', 'ASIAQKM3NNZID6JNDOMM')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'q0zAdV0pIREu3dHLFrTiQMHVmRhqCniEoAbGqjUg')
-AWS_SESSION_TOKEN = os.environ.get('AWS_SESSION_TOKEN', 'IQoJb3JpZ2luX2VjEDgaCXVzLXdlc3QtMiJGMEQCIAV+sAZhTnA/12jbaVo/Mrzu8fRq7FeImbLTqS6f+x8LAiAn3tUuozc1i2jsvmj7kC01cBfomhOJjxQEoXEcUNJUziq7AggBEAIaDDAyMjMzNzY0NjE2MCIMKAWnffR9vOEe7rRHKpgC9fUYdiyDdhH/eEm1lT40pGtxHXGVfYzd6wDlSus8lgqDgwH/7zDav3NDqsweMHGgQk75PEGUnV7Fefhi4J9D9nWw0nZQUdIGA5R3pp2w2preTIgAblrAqKkaOJpRfRo6RkLzHjqiiRC8icNbD+a+R1A3JY7j/xhWBJkRAJEdi0zQCizmdr5frMnV8f1rG1KXIJdnMEo4OAkfzBXMWqH1mG6TFOhd9p+/A6KHVqCkJo7pbDNBThF9co4gk8szokJ5GhlZ89hY/cLBETxGC8oIPvsz+p+/qWWbylK65Y5wS53eNj0zrCP1VPBb6hFLvMGEjqy8WTbLDQQpyNTI3qvBqzawyCCmrScLYye8xtfPzNfTcy1nc+eWLzDS9rbJBjqeAfU1eXt/8OSVWXEX2Vg0eGkc0815cZJuUhL4GlK4rK3/AqbNQllyLWTQ+2c/kmRV1NHk3PtefIGz00HwYsGaRZ2iF6pf/hg9idyLm+DAIGVaxSY4zUy2sjEpJfJU/BlKI41qTq97AUxMJf8jEO2QKJFPDoxwOZG7I1OxJvdpy/1/qXjVZHS9GKMm2Ms/BUhNYrsT5leQL2ROyxie5Xyt')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', 'ASIAQKM3NNZIGSKYKDU5')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', 'AtCgsIah7w95oow3FqTKpJvuj4orq4VbuUyXHL4f')
+AWS_SESSION_TOKEN = os.environ.get('AWS_SESSION_TOKEN', 'IQoJb3JpZ2luX2VjEFIaCXVzLXdlc3QtMiJHMEUCIQCCO/VD2E3b+zPsh4BZhioRXNyOEcNy/ohlpM1mVkM2jQIgZG+Aov+67Ixs/Dya8kTatdQxnRlHNv6CY/T1nvPuSAUquwIIGhACGgwwMjIzMzc2NDYxNjAiDFm5k4tK8f3PhNLVuiqYAnnAwUidpAco4HNb/JyjxzS2AgdNQH9jHTS46VhwtdUqcukQ6DJ4WV3kqaMT+F5m4XIf4V03OGn+QUdhaN9CUBFUGLtEtQBEywwvGP0SZhoFCvKv9nAlBegViynTXCaoqAOK0m2uR4m1peQNbtJJRdn5oSHKdDmF5hqD7DMcMxNzWN/fhKQopVvp5/knCyGifwNKSipR2WDo7PvsGp1oDcARaPpwISErnTZAUJYSNhUC6nKofuxm2YbxozC+wNXC+5+Os8eWR9A+tYTDbbx4QbCMTWShb+Y5unCdSgycUvMuO1Ve2KNKXeT33TxLe+MvRUT1oiFguQh45zK+qMuXkXXgUbeI+2Hqx+KPYiTyaxdaZ8CUBxNmuTMwi8C8yQY6nQFHh/lIYyohSzfux1UBUBmS6jc4VvChFeB3wozZpFiWbkdHlAvNgCy3dsffrmqCgik+RIn7c0NUUuzWUaa3zkDh6h3+0q8EmiQG7ELYzWoYuTm6dIdm5fqqRR11OZuXfYAdoxyZesVLtfpD1Osql2r7csYlOR0gvhtLzM2DTVzAdbWnaNg7bf9/PzmIXs6RZsele7y6QVPwXwU+yr2q')
 
 # Région AWS (doit correspondre à votre bucket)
 AWS_REGION = 'us-east-1'
@@ -21,4 +21,11 @@ S3_BASE_URL = f'https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com'
 SNS_TOPIC_ARN = os.environ.get(
     'SNS_TOPIC_ARN',
     'arn:aws:sns:us-east-1:022337646160:uady-proyecto-final-notificacion'
+)
+
+# ===== CONFIGURATION DYNAMODB =====
+# Nom de la table DynamoDB pour les sessions
+DYNAMODB_TABLE_NAME = os.environ.get(
+    'DYNAMODB_TABLE_NAME',
+    'sesiones-alumnos'
 )
