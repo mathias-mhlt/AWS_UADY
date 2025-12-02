@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class Constants {
 
-    public static String URL = "ec2-3-89-206-171.compute-1.amazonaws.com";
+    public static String URL = "http://ec2-3-89-206-171.compute-1.amazonaws.com:5000m";
     public static Random random;
 
     static {
