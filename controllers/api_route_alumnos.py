@@ -1,29 +1,27 @@
 from flask import request, jsonify
 from app import app, db, Alumno, validar_nombre, validar_matricula, validar_promedio, validar_alumno_payload
 
-# ✅ VÉRIFIER CES IMPORTS
 try:
     from services.s3_service import S3Service
     s3_service = S3Service()
 except Exception as e:
-    print(f"⚠️ Erreur import S3Service : {e}")
+    print(f"Erreur import S3Service : {e}")
     s3_service = None
 
 try:
     from services.sns_service import SNSService
     sns_service = SNSService()
 except Exception as e:
-    print(f"⚠️ Erreur import SNSService : {e}")
+    print(f"Erreur import SNSService : {e}")
     sns_service = None
 
 try:
     from services.dynamodb_service import DynamoDBService
     dynamodb_service = DynamoDBService()
 except Exception as e:
-    print(f"⚠️ Erreur import DynamoDBService : {e}")
+    print(f"Erreur import DynamoDBService : {e}")
     dynamodb_service = None
 
-# Champs autorisés dans PUT (y compris password)
 CAMPOS_PERMITIDOS_EN_PUT = {"id", "nombres", "apellidos", "matricula", "promedio", "password"}
 
 @app.route("/alumnos", methods=["GET"])
@@ -88,20 +86,16 @@ def alumno_delete(alumno_id):
 
 @app.route("/alumnos/<int:alumno_id>", methods=["PUT"])
 def alumno_update(alumno_id):
-    """Met à jour un alumno existant"""
     data = request.get_json()
     
-    # Vérifier les clés invalides
     claves_invalidas = set(data.keys()) - CAMPOS_PERMITIDOS_EN_PUT
     if claves_invalidas:
         return jsonify({
             "error": f"Campos no permitidos: {', '.join(claves_invalidas)}"
         }), 400
     
-    # Retirer l'ID du body (on utilise celui de l'URL)
     data_to_update = {k: v for k, v in data.items() if k != "id"}
     
-    # Valider les champs à mettre à jour
     errors = {}
     validated_data = {}
     
@@ -133,10 +127,8 @@ def alumno_update(alumno_id):
         else:
             validated_data["promedio"] = promedio
     
-    # ✅ AJOUTER : Permettre la mise à jour du password
     if "password" in data_to_update:
         password = data_to_update.get("password")
-        # Le password peut être n'importe quelle chaîne (pas de validation stricte)
         if password is not None and isinstance(password, str):
             validated_data["password"] = password
     
@@ -148,11 +140,9 @@ def alumno_update(alumno_id):
     if alumno is None:
         return jsonify({"error": "Alumno no encontrado"}), 404
     
-    # Modification des attributs
     for key, value in validated_data.items():
         setattr(alumno, key, value)
     
-    # Sauvegarde dans la BD
     db.session.commit()
     
     return jsonify(alumno.to_dict()), 200
@@ -160,9 +150,7 @@ def alumno_update(alumno_id):
 
 @app.route("/alumnos/<int:alumno_id>/fotoPerfil", methods=["POST"])
 def upload_foto_perfil(alumno_id):
-    """Upload une photo de profil pour un alumno."""
     
-    # ✅ VÉRIFIER QUE LE SERVICE EXISTE
     if s3_service is None:
         return jsonify({
             "error": "Servicio S3 no disponible"
@@ -200,9 +188,7 @@ def upload_foto_perfil(alumno_id):
 
 @app.route("/alumnos/<int:alumno_id>/email", methods=["POST"])
 def enviar_email_alumno(alumno_id):
-    """Envoie une notification par email avec les informations d'un alumno."""
     
-    # ✅ VÉRIFIER QUE LE SERVICE EXISTE
     if sns_service is None:
         return jsonify({
             "error": "Servicio SNS no disponible"
@@ -237,9 +223,7 @@ def enviar_email_alumno(alumno_id):
 
 @app.route("/alumnos/<int:alumno_id>/session/login", methods=["POST"])
 def alumno_session_login(alumno_id):
-    """Crée une session pour un alumno (login)."""
     
-    # ✅ VÉRIFIER QUE LE SERVICE EXISTE
     if dynamodb_service is None:
         return jsonify({
             "error": "Servicio DynamoDB no disponible"
@@ -284,9 +268,7 @@ def alumno_session_login(alumno_id):
 
 @app.route("/alumnos/<int:alumno_id>/session/verify", methods=["POST"])
 def alumno_session_verify(alumno_id):
-    """Vérifie si une session est valide."""
     
-    # ✅ VÉRIFIER QUE LE SERVICE EXISTE
     if dynamodb_service is None:
         return jsonify({
             "error": "Servicio DynamoDB no disponible"
@@ -335,9 +317,7 @@ def alumno_session_verify(alumno_id):
 
 @app.route("/alumnos/<int:alumno_id>/session/logout", methods=["POST"])
 def alumno_session_logout(alumno_id):
-    """Ferme une session (logout)."""
     
-    # ✅ VÉRIFIER QUE LE SERVICE EXISTE
     if dynamodb_service is None:
         return jsonify({
             "error": "Servicio DynamoDB no disponible"
