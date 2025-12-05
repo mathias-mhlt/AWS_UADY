@@ -145,8 +145,7 @@ def validar_profesor_payload(payload):
 # ===== MODELOS DE BASE DE DATOS =====
 
 class Alumno(db.Model):
-    """Modèle représentant un étudiant"""
-    __tablename__ = 'alumnos'
+    __tablename__ = 'alumno'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombres = db.Column(db.String(100), nullable=True)
@@ -157,6 +156,7 @@ class Alumno(db.Model):
     password = db.Column(db.String(255), nullable=True)
     
     def to_dict(self):
+
         return {
             'id': self.id,
             'nombres': self.nombres,
