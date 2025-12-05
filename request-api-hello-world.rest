@@ -35,7 +35,6 @@ Content-Type: application/json
 }
 
 ###
-# Test sur EC2 (RDS)
 POST http://ec2-3-89-206-171.compute-1.amazonaws.com/alumnos HTTP/1.1
 Content-Type: application/json
 
@@ -52,7 +51,6 @@ GET http://ec2-3-89-206-171.compute-1.amazonaws.com/alumnos HTTP/1.1
 Content-Type: application/json
 
 ###
-# Créer un alumno test
 POST http://ec2-3-89-206-171.compute-1.amazonaws.com/alumnos HTTP/1.1
 Content-Type: application/json
 
@@ -65,14 +63,11 @@ Content-Type: application/json
 }
 
 ###
-# Envoyer une notification pour l'alumno créé
-# Remplacer {id} par l'ID retourné ci-dessus
 POST http://ec2-3-89-206-171.compute-1.amazonaws.com/alumnos/1/email HTTP/1.1
 Content-Type: application/json
 
 
 ###
-# Créer un alumno
 POST http://ec2-3-89-206-171.compute-1.amazonaws.com/alumnos HTTP/1.1
 Content-Type: application/json
 
@@ -85,7 +80,6 @@ Content-Type: application/json
 }
 
 ###
-# Login (créer une session DynamoDB)
 POST http://ec2-3-89-206-171.compute-1.amazonaws.com/alumnos/1/session/login HTTP/1.1
 Content-Type: application/json
 

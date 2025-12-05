@@ -3,18 +3,9 @@ from botocore.exceptions import ClientError
 from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION, SNS_TOPIC_ARN
 
 class SNSService:
-    """
-    Service pour envoyer des notifications par email via SNS.
-    """
     
     def __init__(self):
-        """
-        Initialise le client SNS avec les credentials AWS.
-        
-        Logique :
-        - boto3.client('sns') crée une connexion authentifiée à SNS
-        - Les credentials proviennent de config.py
-        """
+
         self.sns_client = boto3.client(
             'sns',
             aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -25,28 +16,11 @@ class SNSService:
         self.topic_arn = SNS_TOPIC_ARN
     
     def enviar_notificacion_alumno(self, alumno):
-        """
-        Envoie une notification avec les informations d'un alumno.
-        
-        Arguments :
-        - alumno : Objet Alumno (model SQLAlchemy)
-        
-        Retourne :
-        - True si envoyé avec succès
-        - False en cas d'erreur
-        
-        Logique :
-        1. Construire le sujet du message
-        2. Construire le corps du message (informations de l'alumno)
-        3. Publier sur le topic SNS
-        4. SNS envoie automatiquement à tous les abonnés
-        """
+
         
         try:
-            # ===== CONSTRUCTION DU SUJET =====
             subject = f"Notificación de Alumno: {alumno.nombres} {alumno.apellidos}"
             
-            # ===== CONSTRUCTION DU CORPS DU MESSAGE =====
             message = f"""
 Hola,
 
@@ -67,12 +41,11 @@ Saludos cordiales,
 Sistema de Gestión de Alumnos
             """.strip()
             
-            # ===== PUBLICATION SUR SNS =====
             response = self.sns_client.publish(
-                TopicArn=self.topic_arn,     # Topic cible
-                Subject=subject,              # Sujet de l'email (optionnel)
-                Message=message,              # Corps du message
-                MessageAttributes={           # Métadonnées optionnelles
+                TopicArn=self.topic_arn,
+                Subject=subject,
+                Message=message,
+                MessageAttributes={
                     'AlumnoID': {
                         'DataType': 'Number',
                         'StringValue': str(alumno.id)
@@ -84,25 +57,21 @@ Sistema de Gestión de Alumnos
                 }
             )
             
-            # ===== VÉRIFICATION DU SUCCÈS =====
-            # SNS retourne un MessageId si succès
             message_id = response.get('MessageId')
             
             if message_id:
-                print(f"Notification envoyée avec succès. MessageId: {message_id}")
+                print(f"Notificacion enviada. MessageId: {message_id}")
                 return True
             else:
-                print("Erreur : Pas de MessageId retourné")
+                print("Error : No MessageId retornado")
                 return False
             
         except ClientError as e:
-            # Erreur AWS (permissions, ARN invalide, etc.)
             error_code = e.response['Error']['Code']
             error_message = e.response['Error']['Message']
-            print(f"Erreur SNS [{error_code}]: {error_message}")
+            print(f"Error SNS [{error_code}]: {error_message}")
             return False
             
         except Exception as e:
-            # Autre erreur
-            print(f"Erreur inattendue lors de l'envoi SNS : {e}")
+            print(f"Error durante el envio del SNS : {e}")
             return False

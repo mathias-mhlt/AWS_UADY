@@ -5,48 +5,37 @@ import os
 
 app = Flask(__name__)
 
-# ===== CONFIGURATION BASE DE DONNÉES =====
+# ===== CONFIGURACION DATABASE =====
 
-# Détection de l'environnement (local vs production)
 if os.environ.get('ENV') == 'production':
-    # ===== CONFIGURATION RDS MYSQL (PRODUCTION) =====
+    # ===== CONFIGURACION RDS MYSQL (PRODUCION) =====
     DB_USER = os.environ.get('DB_USER', 'm25090057')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'Eselproyectofinal!')
     DB_HOST = os.environ.get('DB_HOST', 'database-proyecto-final.cslvaacprg0m.us-east-1.rds.amazonaws.com')
-    DB_PORT = os.environ.get('DB_PORT', '3306')  # ✅ 3306 pour MySQL (pas 5432)
+    DB_PORT = os.environ.get('DB_PORT', '3306')
     DB_NAME = os.environ.get('DB_NAME', 'database-proyecto-final')
     
-    # ✅ Construction de l'URI pour MYSQL (pas PostgreSQL)
     DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     
 else:
-    # ===== CONFIGURATION SQLITE (LOCAL/DEV) =====
+    # ===== CONFIGURACION SQLITE (LOCAL/DEV) =====
     basedir = os.path.abspath(os.path.dirname(__file__))
     DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'alumnos_profesores.db')
 
-# Configuration Flask
+# CONFIGURACION Flask
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Logging de la connexion (debug)
-print(f"📊 Connexion à la base de données : {DATABASE_URI.split('@')[-1] if '@' in DATABASE_URI else 'SQLite local'}")
+print(f"Conexion a la base de datos : {DATABASE_URI.split('@')[-1] if '@' in DATABASE_URI else 'SQLite local'}")
 
-# Initialiser SQLAlchemy (ORM) et Migrate (migrations)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# ===== SUPPRESSION DE L'IN-MEMORY STORAGE =====
-# AVANT : alumnos = []
-# AVANT : profesores = []
-# MAINTENANT : Les données sont dans la base de données
-
-# Labels pour référence (optionnel, peut être supprimé)
 labeles_alumnos = ["id", "nombres", "apellidos", "matricula", "promedio"]
 labeles_profesores = ["id", "nombres", "apellidos", "numeroEmpleado", "horasClase"]
 
-#VALIDATIONS
+#VALIDACIONES
 def validar_id(id):
-    """Valide que l'ID est un entier positif"""
     try:
         id = int(id)
         if id > 0:
@@ -56,7 +45,6 @@ def validar_id(id):
         return None
 
 def validar_matricula(matricula):
-    """Valide que la matricule commence par A suivi de chiffres"""
     if not isinstance(matricula, str):
         return None
     matricula = matricula.strip()
@@ -69,7 +57,6 @@ def validar_matricula(matricula):
     return matricula
 
 def validar_nombre(nombre):
-    """Valide que le nom contient uniquement des lettres, espaces, tirets et apostrophes"""
     if not isinstance(nombre, str):
         return None
     nombre = nombre.strip()
@@ -81,7 +68,6 @@ def validar_nombre(nombre):
     return nombre
 
 def validar_promedio(promedio):
-    """Valide que le promedio est un nombre entre 0 et 100"""
     try:
         promedio = float(promedio)
         if 0 <= promedio <= 100:
@@ -91,7 +77,6 @@ def validar_promedio(promedio):
         return None
 
 def validar_horas(horas):
-    """Valide que les heures sont un entier positif"""
     try:
         horas = int(horas)
         if horas > 0:
@@ -101,10 +86,8 @@ def validar_horas(horas):
         return None
 
 def validar_alumno_payload(payload):
-    """Valide le payload pour créer/modifier un alumno"""
     errors = {}
     
-    # # ID - obligatoire pour POST
     # if "id" not in payload:
     #     errors["id"] = "ID requerido."
     # else:
@@ -112,25 +95,21 @@ def validar_alumno_payload(payload):
     #     if id_validado is None:
     #         errors["id"] = "ID inválido."
     
-    # Nombres - optionnel, mais si présent doit être valide
     if "nombres" in payload:
         nombres = validar_nombre(payload.get("nombres"))
         if nombres is None:
             errors["nombres"] = "Nombre inválido."
     
-    # Apellidos - optionnel, mais si présent doit être valide
     if "apellidos" in payload:
         apellidos = validar_nombre(payload.get("apellidos"))
         if apellidos is None:
             errors["apellidos"] = "Apellido inválido."
     
-    # Matricula - optionnel, mais si présent doit être valide
     if "matricula" in payload:
         matricula = validar_matricula(payload.get("matricula"))
         if matricula is None:
             errors["matricula"] = "Matrícula inválida."
     
-    # Promedio - optionnel, mais si présent doit être valide
     if "promedio" in payload:
         promedio = validar_promedio(payload.get("promedio"))
         if promedio is None:
@@ -139,36 +118,23 @@ def validar_alumno_payload(payload):
     return errors
 
 def validar_profesor_payload(payload):
-    """Valide le payload pour créer/modifier un profesor"""
     errors = {}
     
-    # # ID - obligatoire pour POST
-    # if "id" not in payload:
-    #     errors["id"] = "ID requerido."
-    # else:
-    #     id_validado = validar_id(payload.get("id"))
-    #     if id_validado is None:
-    #         errors["id"] = "ID inválido."
-    
-    # Nombres - optionnel
     if "nombres" in payload:
         nombres = validar_nombre(payload.get("nombres"))
         if nombres is None:
             errors["nombres"] = "Nombre inválido."
     
-    # Apellidos - optionnel
     if "apellidos" in payload:
         apellidos = validar_nombre(payload.get("apellidos"))
         if apellidos is None:
             errors["apellidos"] = "Apellido inválido."
     
-    # NumeroEmpleado - optionnel
     if "numeroEmpleado" in payload:
         numero = validar_id(payload.get("numeroEmpleado"))
         if numero is None:
             errors["numeroEmpleado"] = "Número de empleado inválido."
     
-    # HorasClase - optionnel
     if "horasClase" in payload:
         horas = validar_horas(payload.get("horasClase"))
         if horas is None:
@@ -176,11 +142,11 @@ def validar_profesor_payload(payload):
     
     return errors
 
-# ===== MODÈLES DE BASE DE DONNÉES =====
+# ===== MODELOS DE BASE DE DATOS =====
 
 class Alumno(db.Model):
     """Modèle représentant un étudiant"""
-    __tablename__ = 'alumnos'  # ✅ PLURIEL
+    __tablename__ = 'alumnos'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombres = db.Column(db.String(100), nullable=True)
@@ -203,8 +169,7 @@ class Alumno(db.Model):
 
 
 class Profesor(db.Model):
-    """Modèle représentant un professeur"""
-    __tablename__ = 'profesores'  # ✅ PLURIEL
+    __tablename__ = 'profesores'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombres = db.Column(db.String(100), nullable=True)
